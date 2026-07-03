@@ -49,6 +49,9 @@ jobs:
           # Supabase 값은 리포지토리 Secrets로 주입 (Settings → Secrets and variables → Actions)
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # 자동 업데이트 서명 (updater 아티팩트에 .sig 생성 + latest.json)
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: '할 일 ${{ github.ref_name }}'

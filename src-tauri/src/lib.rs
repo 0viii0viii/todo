@@ -16,6 +16,8 @@ fn show_main(app: &tauri::AppHandle) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             // 트레이 메뉴: 열기 / 종료
             let show_i = MenuItem::with_id(app, "show", "열기", true, None::<&str>)?;

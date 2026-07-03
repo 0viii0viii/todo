@@ -39,7 +39,7 @@ export function useJournal(userId: string | undefined) {
         .from('todos')
         .select('*')
         .eq('done', false)
-        .order('target_date', { ascending: true })
+        .order('sort_order', { ascending: true })
         .order('created_at', { ascending: true }),
       supabase
         .from('todos')
@@ -108,9 +108,11 @@ export function useJournal(userId: string | undefined) {
   // ---- 변경 작업 ----
   const add = useCallback(async (): Promise<string | undefined> => {
     if (!userId) return;
+    // 맨 아래로: 현재 미완료 중 최대 sort_order + 1
+    const nextOrder = incomplete.reduce((m, t) => Math.max(m, t.sort_order + 1), 0);
     const { data, error } = await supabase
       .from('todos')
-      .insert({ target_date: todayStr })
+      .insert({ target_date: todayStr, sort_order: nextOrder })
       .select()
       .single();
     if (error) {
@@ -119,7 +121,7 @@ export function useJournal(userId: string | undefined) {
     }
     await load();
     return (data as Todo).id;
-  }, [userId, todayStr, load]);
+  }, [userId, todayStr, load, incomplete]);
 
   // 타이핑 저장 — refetch 하지 않음(커서 유지). 로컬 content 도 갱신.
   const updateContent = useCallback(async (id: string, content: string) => {
@@ -155,6 +157,21 @@ export function useJournal(userId: string | undefined) {
     },
     [load],
   );
+
+  // 드래그 재정렬: 낙관적으로 로컬 순서를 바꾸고 sort_order 를 일괄 저장.
+  const reorder = useCallback(async (orderedIds: string[]) => {
+    setIncomplete((prev) => {
+      const map = new Map(prev.map((t) => [t.id, t]));
+      const next = orderedIds.map((id) => map.get(id)).filter(Boolean) as Todo[];
+      const rest = prev.filter((t) => !orderedIds.includes(t.id));
+      return [...next, ...rest];
+    });
+    const results = await Promise.all(
+      orderedIds.map((id, i) => supabase.from('todos').update({ sort_order: i }).eq('id', id)),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) setError(failed.error.message);
+  }, []);
 
   // 캘린더용: 해당 월의 날짜별 개수 (완료 수 + 이번 달 오늘 칸엔 미완료 수).
   const fetchMonthCounts = useCallback(
@@ -197,6 +214,7 @@ export function useJournal(userId: string | undefined) {
     updateContent,
     toggle,
     remove,
+    reorder,
     fetchMonthCounts,
   };
 }

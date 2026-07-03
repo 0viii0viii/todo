@@ -7,6 +7,7 @@ export interface Todo {
   target_date: string; // YYYY-MM-DD
   created_at: string;
   completed_at: string | null;
+  sort_order: number;
 }
 
 /** 화면용 Todo — carried_over 는 클라이언트가 계산해 붙인 파생 플래그. */

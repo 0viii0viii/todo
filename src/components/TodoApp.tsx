@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useJournal } from '../hooks/useJournal';
+import { useUpdater } from '../hooks/useUpdater';
 import { DaySection } from './DaySection';
 import { CalendarButton } from './CalendarButton';
 import { ThemeButton } from './ThemeButton';
@@ -26,9 +28,11 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
     updateContent,
     toggle,
     remove,
+    reorder,
     fetchMonthCounts,
   } = useJournal(user.id);
 
+  const { update, status, install, dismiss } = useUpdater();
   const [focusId, setFocusId] = useState<string | null>(null);
   const [pendingScroll, setPendingScroll] = useState<string | null>(null);
   const dayRefs = useRef(new Map<string, HTMLElement>());
@@ -37,11 +41,30 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
   const loadingMore = useRef(false);
   const prevHeight = useRef(0);
 
-  // 동기화: 창 포커스 시 refetch
+  // 동기화: 창 포커스 / 탭 가시성 복귀 시 refetch (Tauri 네이티브 포커스 포함)
   useEffect(() => {
     const onFocus = () => void refetch();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refetch();
+    };
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    let unlisten: (() => void) | undefined;
+    getCurrentWindow()
+      .onFocusChanged(({ payload: focused }) => {
+        if (focused) void refetch();
+      })
+      .then((fn) => {
+        unlisten = fn;
+      })
+      .catch(() => {});
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+      unlisten?.();
+    };
   }, [refetch]);
 
   // 무한 스크롤: 맨 위 sentinel 이 보이면 과거 더 로드 (위로 스크롤)
@@ -107,6 +130,22 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
 
   return (
     <div className="app">
+      {update && (
+        <div className="update-banner">
+          <span className="update-msg">
+            새 버전 <b>{update.version}</b> 이 있어요
+          </span>
+          <div className="update-actions">
+            <button type="button" className="update-btn" onClick={install} disabled={status === 'downloading'}>
+              {status === 'downloading' ? '설치 중…' : status === 'error' ? '다시 시도' : '업데이트'}
+            </button>
+            <button type="button" className="update-x" aria-label="나중에" onClick={dismiss}>
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="corner-actions">
         <CalendarButton todayStr={todayStr} onPick={handlePick} fetchMonthCounts={fetchMonthCounts} />
         <ThemeButton theme={theme} setTheme={setTheme} />
@@ -134,6 +173,7 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
               onToggle={toggle}
               onDelete={remove}
               onSave={updateContent}
+              onReorder={reorder}
             />
         ))}
       </div>
