@@ -614,16 +614,16 @@ body::before {
   border: none;
   color: var(--ink-faint);
   cursor: grab;
-  padding: 2px;
-  margin: 4px -6px 0 -14px;
+  padding: 6px 3px;
+  margin: 1px -4px 0 -16px;
   flex-shrink: 0;
-  opacity: 0;
+  opacity: 0.28;
   touch-action: none;
   transition: opacity 0.18s ease, color 0.18s ease;
 }
 
 .item:hover .drag {
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .drag:hover {
@@ -633,6 +633,29 @@ body::before {
 
 .drag:active {
   cursor: grabbing;
+}
+
+/* 드래그 프리뷰(DragOverlay) — 종이 위에 떠 있는 카드 */
+.drag-overlay {
+  margin: 0;
+  padding: 4px 10px;
+  list-style: none;
+  cursor: grabbing;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.4);
+}
+
+.drag-overlay .item {
+  opacity: 1 !important;
+  animation: none;
+  transform: none;
+}
+
+/* 프리뷰에는 액션 버튼 숨김 */
+.drag-overlay .act {
+  display: none;
 }
 
 /* 추가 버튼 */

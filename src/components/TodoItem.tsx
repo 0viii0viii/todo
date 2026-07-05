@@ -44,16 +44,33 @@ export const TodoItem = forwardRef<HTMLLIElement, Props>(function TodoItem(
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
+    const html = trimTrailingEmpty(todo.content || '');
     const tmp = document.createElement('div');
-    tmp.innerHTML = todo.content || '';
+    tmp.innerHTML = html;
     const text = (tmp.textContent || '').trim();
     if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
+      // HTML + 플레인 텍스트를 함께 넣어 붙여넣는 곳에서 리스트/서식 유지
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      /* 클립보드 접근 실패 시 무시 */
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      } catch {
+        /* 클립보드 접근 실패 시 무시 */
+      }
     }
   }
 

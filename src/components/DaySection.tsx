@@ -1,11 +1,14 @@
 import { forwardRef } from 'react';
+import { useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -38,6 +41,7 @@ interface RowProps {
   onToggle: (todo: TodoView) => void;
   onDelete: (id: string) => void;
   onSave: (id: string, html: string) => void;
+  onMove: (id: string, dir: -1 | 1) => void;
 }
 
 const dragIcon = (
@@ -51,18 +55,36 @@ const dragIcon = (
   </svg>
 );
 
-function SortableTodoItem(props: RowProps) {
+function SortableTodoItem({ onMove, ...props }: RowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.todo.id,
   });
+  // 등장 애니메이션(rise)은 opacity:0 으로 시작 → 애니를 끄면 투명해지므로 opacity 를 되돌린다.
+  // 드래그 중 원본은 흐린 자리표시만 하고, 실제 프리뷰는 DragOverlay 가 렌더한다.
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(transform) ?? 'none',
     transition,
-    opacity: isDragging ? 0.4 : undefined,
-    zIndex: isDragging ? 5 : undefined,
+    animation: 'none',
+    opacity: isDragging ? 0.25 : 1,
   };
   const handle = (
-    <button type="button" className="drag" aria-label="순서 변경" {...attributes} {...listeners}>
+    <button
+      type="button"
+      className="drag"
+      aria-label="순서 변경 (방향키로 이동)"
+      title="드래그 또는 ↑↓ 방향키로 이동"
+      {...attributes}
+      {...listeners}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          onMove(props.todo.id, -1);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          onMove(props.todo.id, 1);
+        }
+      }}
+    >
       {dragIcon}
     </button>
   );
@@ -75,11 +97,18 @@ export const DaySection = forwardRef<HTMLElement, Props>(function DaySection(
 ) {
   const rel = relativeLabel(section.dateStr, todayStr);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const incomplete = section.items.filter((t) => !t.done);
   const completed = section.items.filter((t) => t.done);
+  const activeTodo = activeId ? incomplete.find((t) => t.id === activeId) : undefined;
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
 
   function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const ids = incomplete.map((t) => t.id);
@@ -87,6 +116,15 @@ export const DaySection = forwardRef<HTMLElement, Props>(function DaySection(
       const newIndex = ids.indexOf(String(over.id));
       if (oldIndex !== -1 && newIndex !== -1) onReorder(arrayMove(ids, oldIndex, newIndex));
     }
+  }
+
+  // 방향키 이동 (핸들에 포커스한 상태)
+  function moveItem(id: string, dir: -1 | 1) {
+    const ids = incomplete.map((t) => t.id);
+    const idx = ids.indexOf(id);
+    const next = idx + dir;
+    if (idx === -1 || next < 0 || next >= ids.length) return;
+    onReorder(arrayMove(ids, idx, next));
   }
 
   return (
@@ -99,7 +137,13 @@ export const DaySection = forwardRef<HTMLElement, Props>(function DaySection(
 
       {isToday ? (
         <>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveId(null)}
+          >
             <SortableContext
               items={incomplete.map((t) => t.id)}
               strategy={verticalListSortingStrategy}
@@ -114,10 +158,26 @@ export const DaySection = forwardRef<HTMLElement, Props>(function DaySection(
                     onToggle={onToggle}
                     onDelete={onDelete}
                     onSave={onSave}
+                    onMove={moveItem}
                   />
                 ))}
               </ul>
             </SortableContext>
+            <DragOverlay>
+              {activeTodo ? (
+                <ul className="list drag-overlay">
+                  <TodoItem
+                    todo={activeTodo}
+                    index={0}
+                    editable={false}
+                    autoFocus={false}
+                    onToggle={() => {}}
+                    onDelete={() => {}}
+                    onSave={() => {}}
+                  />
+                </ul>
+              ) : null}
+            </DragOverlay>
           </DndContext>
 
           {completed.length > 0 && (
