@@ -60,8 +60,19 @@ jobs:
             - **macOS**: `.dmg` 를 내려받아 설치
             - **Windows**: `.exe`(NSIS) 또는 `.msi` 를 내려받아 설치
 
-            > 코드 서명이 없어 최초 실행 시 경고가 나올 수 있습니다.
-            > macOS: 우클릭 → 열기 / Windows: "추가 정보" → "실행".
+            ---
+            #### ⚠️ 최초 실행 안내 (Apple 공증이 없어 경고가 뜹니다)
+
+            **macOS** — "악성 소프트웨어 여부를 확인할 수 없습니다" 경고가 뜨면, 아래 둘 중 하나로 열어주세요.
+
+            - **터미널 (가장 확실)** — 앱을 `응용 프로그램`으로 옮긴 뒤:
+              ```
+              xattr -dr com.apple.quarantine /Applications/Todo.app
+              ```
+              그리고 평소처럼 더블클릭.
+            - **설정에서 허용** — 앱 더블클릭(경고 닫기) → **시스템 설정 → 개인정보 보호 및 보안** → 아래로 스크롤 → **"그래도 열기"** → 암호 인증. 이후로는 그냥 실행됩니다.
+
+            **Windows** — SmartScreen 경고가 뜨면 **"추가 정보" → "실행"**.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
