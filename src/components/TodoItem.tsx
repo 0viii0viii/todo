@@ -147,6 +147,14 @@ function EditableBody({
       Placeholder.configure({ placeholder: '할 일을 적어보세요…  (URL 은 자동 링크)' }),
     ],
     content: trimTrailingEmpty(todo.content || ''),
+    // 맞춤법/오타 빨간 줄 끄기
+    editorProps: {
+      attributes: {
+        spellcheck: 'false',
+        autocorrect: 'off',
+        autocapitalize: 'off',
+      },
+    },
     autofocus: autoFocus ? 'end' : false,
     onUpdate: ({ editor }) => {
       clearTimeout(timer.current);

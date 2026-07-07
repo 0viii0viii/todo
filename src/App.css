@@ -4,15 +4,16 @@
   --paper-card: #fbf7ec;
   --rule: #d9cfb8;
   --margin: #c8503b;
-  --ink: #161d2e;
-  --ink-soft: #444a5a;
-  --ink-faint: #8b8574;
+  --ink: #10151f;
+  --ink-soft: #363c4c;
+  --ink-faint: #6b6656;
   --stamp: #b8402e;
-  --gold: #b8894a;
-  --link: #3a5a8c;
+  --gold: #a87a34;
+  --link: #2f4f82;
 
-  --font-display: 'Fraunces', 'Gowun Batang', serif;
-  --font-body: 'Gowun Batang', 'Fraunces', serif;
+  --font-display: 'Fraunces', 'Pretendard Variable', Pretendard, sans-serif;
+  --font-body: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo',
+    system-ui, sans-serif;
 
   color: var(--ink);
   background: var(--paper);
@@ -27,12 +28,12 @@
   --paper-card: #fdf8dd;
   --rule: #b9cdd8;
   --margin: #c0392b;
-  --ink: #122539;
-  --ink-soft: #38485c;
-  --ink-faint: #8c8461;
+  --ink: #0d1c2e;
+  --ink-soft: #2b3a4c;
+  --ink-faint: #6d6647;
   --stamp: #c0392b;
-  --gold: #b08d2e;
-  --link: #2a6fb0;
+  --gold: #9c7c26;
+  --link: #205f9c;
 }
 
 [data-theme='blueprint'] {
@@ -40,9 +41,9 @@
   --paper-card: #0f374f;
   --rule: #39647f;
   --margin: #7fd4e8;
-  --ink: #eaf4fb;
-  --ink-soft: #aecadb;
-  --ink-faint: #6f93a8;
+  --ink: #f2f8fd;
+  --ink-soft: #c2d8e6;
+  --ink-faint: #8aa8bd;
   --stamp: #ffd27f;
   --gold: #ffd27f;
   --link: #8fe0f0;
@@ -53,9 +54,9 @@
   --paper-card: #26262f;
   --rule: #34343f;
   --margin: #d9a441;
-  --ink: #ece6d8;
-  --ink-soft: #a9a596;
-  --ink-faint: #6f6c62;
+  --ink: #f3eee2;
+  --ink-soft: #bdb9aa;
+  --ink-faint: #8a8778;
   --stamp: #e0954a;
   --gold: #d9a441;
   --link: #8ab4d9;
@@ -66,9 +67,9 @@
   --paper-card: #fef6f9;
   --rule: #f0d5de;
   --margin: #d56a8f;
-  --ink: #35111f;
-  --ink-soft: #6a3f4d;
-  --ink-faint: #b08d99;
+  --ink: #2b0c18;
+  --ink-soft: #573240;
+  --ink-faint: #8f6b78;
   --stamp: #c85a7f;
   --gold: #c99a5b;
   --link: #a05a8f;
@@ -470,6 +471,7 @@ body::before {
   padding-top: 2px;
   font-family: var(--font-body);
   font-size: 16px;
+  font-weight: 450;
   line-height: 1.65;
   color: var(--ink);
 }
