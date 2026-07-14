@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { addDays, dateToStr, dayStartISO, localTodayStr } from '../lib/date';
-import type { Todo, TodoView } from '../lib/types';
+import type { Category, Todo, TodoView } from '../lib/types';
 
 export interface DaySection {
   dateStr: string;
@@ -106,22 +106,33 @@ export function useJournal(userId: string | undefined) {
   }, []);
 
   // ---- 변경 작업 ----
-  const add = useCallback(async (): Promise<string | undefined> => {
-    if (!userId) return;
-    // 맨 아래로: 현재 미완료 중 최대 sort_order + 1
-    const nextOrder = incomplete.reduce((m, t) => Math.max(m, t.sort_order + 1), 0);
-    const { data, error } = await supabase
-      .from('todos')
-      .insert({ target_date: todayStr, sort_order: nextOrder })
-      .select()
-      .single();
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    await load();
-    return (data as Todo).id;
-  }, [userId, todayStr, load, incomplete]);
+  const add = useCallback(
+    async (category: Category): Promise<string | undefined> => {
+      if (!userId) return;
+      // 맨 아래로: 현재 미완료 중 최대 sort_order + 1
+      const nextOrder = incomplete.reduce((m, t) => Math.max(m, t.sort_order + 1), 0);
+      const { data, error } = await supabase
+        .from('todos')
+        .insert({ target_date: todayStr, sort_order: nextOrder, category })
+        .select()
+        .single();
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      await load();
+      return (data as Todo).id;
+    },
+    [userId, todayStr, load, incomplete],
+  );
+
+  // 분류 변경 (업무 ↔ 일상) — 낙관적 갱신.
+  const setCategory = useCallback(async (id: string, category: Category) => {
+    setIncomplete((prev) => prev.map((t) => (t.id === id ? { ...t, category } : t)));
+    setCompleted((prev) => prev.map((t) => (t.id === id ? { ...t, category } : t)));
+    const { error } = await supabase.from('todos').update({ category }).eq('id', id);
+    if (error) setError(error.message);
+  }, []);
 
   // 타이핑 저장 — refetch 하지 않음(커서 유지). 로컬 content 도 갱신.
   const updateContent = useCallback(async (id: string, content: string) => {
@@ -159,19 +170,24 @@ export function useJournal(userId: string | undefined) {
   );
 
   // 드래그 재정렬: 낙관적으로 로컬 순서를 바꾸고 sort_order 를 일괄 저장.
-  const reorder = useCallback(async (orderedIds: string[]) => {
-    setIncomplete((prev) => {
-      const map = new Map(prev.map((t) => [t.id, t]));
-      const next = orderedIds.map((id) => map.get(id)).filter(Boolean) as Todo[];
-      const rest = prev.filter((t) => !orderedIds.includes(t.id));
-      return [...next, ...rest];
-    });
-    const results = await Promise.all(
-      orderedIds.map((id, i) => supabase.from('todos').update({ sort_order: i }).eq('id', id)),
-    );
-    const failed = results.find((r) => r.error);
-    if (failed?.error) setError(failed.error.message);
-  }, []);
+  // orderedVisibleIds 는 현재 탭에서 '보이는' 미완료 항목의 새 순서.
+  // 필터로 숨겨진 다른 분류 항목은 원래 슬롯에 고정한 채, 보이는 항목만 그 자리들 안에서 재배치한다.
+  const reorder = useCallback(
+    async (orderedVisibleIds: string[]) => {
+      const visible = new Set(orderedVisibleIds);
+      let vi = 0;
+      const newOrderIds = incomplete.map((t) => (visible.has(t.id) ? orderedVisibleIds[vi++] : t.id));
+      const map = new Map(incomplete.map((t) => [t.id, t]));
+      const full = newOrderIds.map((id) => map.get(id)).filter(Boolean) as Todo[];
+      setIncomplete(full);
+      const results = await Promise.all(
+        full.map((t, i) => supabase.from('todos').update({ sort_order: i }).eq('id', t.id)),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) setError(failed.error.message);
+    },
+    [incomplete],
+  );
 
   // 캘린더용: 해당 월의 날짜별 개수 (완료 수 + 이번 달 오늘 칸엔 미완료 수).
   const fetchMonthCounts = useCallback(
@@ -215,6 +231,7 @@ export function useJournal(userId: string | undefined) {
     toggle,
     remove,
     reorder,
+    setCategory,
     fetchMonthCounts,
   };
 }

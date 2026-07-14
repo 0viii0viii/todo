@@ -1,3 +1,6 @@
+/** 할 일 분류: 업무 / 일상. */
+export type Category = 'work' | 'life';
+
 /** DB `todos` 행 한 개 (서버 원본 그대로). */
 export interface Todo {
   id: string;
@@ -8,6 +11,7 @@ export interface Todo {
   created_at: string;
   completed_at: string | null;
   sort_order: number;
+  category: Category;
 }
 
 /** 화면용 Todo — carried_over 는 클라이언트가 계산해 붙인 파생 플래그. */

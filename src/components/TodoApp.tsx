@@ -1,8 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useJournal } from '../hooks/useJournal';
 import { useUpdater } from '../hooks/useUpdater';
+import { useTab } from '../hooks/useTab';
+import { TABS, TAB_LABEL } from '../lib/category';
 import { DaySection } from './DaySection';
 import { CalendarButton } from './CalendarButton';
 import { ThemeButton } from './ThemeButton';
@@ -33,6 +35,7 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
   } = useJournal(user.id);
 
   const { update, status, install, dismiss } = useUpdater();
+  const { tab, setTab } = useTab();
   const [focusId, setFocusId] = useState<string | null>(null);
   const [pendingScroll, setPendingScroll] = useState<string | null>(null);
   const dayRefs = useRef(new Map<string, HTMLElement>());
@@ -104,6 +107,13 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
     }
   }, [days]);
 
+  // 탭 전환 시: 항상 '오늘' 섹션을 화면 맨 위로 정렬
+  useEffect(() => {
+    if (loading) return;
+    const el = dayRefs.current.get(todayStr);
+    if (el) el.scrollIntoView({ block: 'start' });
+  }, [tab, loading, todayStr]);
+
   // 캘린더 점프: 데이터 로드 후 해당 섹션으로 스크롤
   useEffect(() => {
     if (!pendingScroll) return;
@@ -114,8 +124,14 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
     }
   }, [pendingScroll, days]);
 
+  // 탭별 필터: 날짜 섹션은 그대로 두고 항목만 현재 분류로 거른다.
+  const visibleDays = useMemo(
+    () => days.map((d) => ({ ...d, items: d.items.filter((t) => t.category === tab) })),
+    [days, tab],
+  );
+
   async function handleAdd() {
-    const id = await add();
+    const id = await add(tab);
     if (id) setFocusId(id);
   }
 
@@ -146,6 +162,21 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
         </div>
       )}
 
+      <div className="tabbar" role="tablist" aria-label="분류 필터">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            className={`tab tab-${t}${tab === t ? ' active' : ''}`}
+            onClick={() => setTab(t)}
+          >
+            {TAB_LABEL[t]}
+          </button>
+        ))}
+      </div>
+
       <div className="corner-actions">
         <CalendarButton todayStr={todayStr} onPick={handlePick} fetchMonthCounts={fetchMonthCounts} />
         <ThemeButton theme={theme} setTheme={setTheme} />
@@ -158,7 +189,7 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
 
       <div className="journal">
         <div ref={sentinelRef} className="sentinel" />
-        {days.map((section) => (
+        {visibleDays.map((section) => (
             <DaySection
               key={section.dateStr}
               ref={(el) => {

@@ -10,7 +10,10 @@ create table if not exists public.todos (
   done         boolean not null default false,
   target_date  date not null,                 -- 클라이언트가 '로컬 오늘' 날짜(YYYY-MM-DD)로 세팅
   created_at   timestamptz not null default now(),
-  completed_at timestamptz                     -- 완료 시 now(), 해제 시 null
+  completed_at timestamptz,                    -- 완료 시 now(), 해제 시 null
+  sort_order   integer not null default 0,     -- 미완료 항목 수동 정렬 순서
+  category     text not null default 'work'    -- 'work'(업무) | 'life'(일상)
+                 check (category in ('work', 'life'))
 );
 
 -- RLS: 본인 데이터만 접근 --------------------------------------------------

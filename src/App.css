@@ -91,6 +91,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 body::before {
@@ -117,6 +118,52 @@ body::before {
   background-size: 1.5px 100%, 100% 100%;
   background-position: 34px 0, 0 0;
   background-repeat: no-repeat, repeat;
+}
+
+/* ===================== 좌상단 분류 탭 (고정) ===================== */
+.tabbar {
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  z-index: 30;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+
+.tab {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-faint);
+  background: none;
+  border: none;
+  padding: 4px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--ink-soft);
+}
+
+.tab.active {
+  color: #fff;
+  font-weight: 500;
+}
+
+.tab-work.active {
+  background: #35507d;
+}
+
+.tab-life.active {
+  background: #3f7d5a;
 }
 
 /* ===================== 우상단 액션 (고정) ===================== */
@@ -474,6 +521,8 @@ body::before {
   font-weight: 450;
   line-height: 1.65;
   color: var(--ink);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .item-body p {
