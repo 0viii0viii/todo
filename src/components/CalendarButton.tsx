@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { monthGrid, strToDate } from '../lib/date';
+import type { Category } from '../lib/types';
 
 interface Props {
   todayStr: string;
+  tab: Category;
   onPick: (dateStr: string) => void;
-  fetchMonthCounts: (year: number, month0: number) => Promise<Record<string, number>>;
+  fetchMonthCounts: (year: number, month0: number, category: Category) => Promise<Record<string, number>>;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const monthFmt = new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'long' });
 
-export function CalendarButton({ todayStr, onPick, fetchMonthCounts }: Props) {
+export function CalendarButton({ todayStr, tab, onPick, fetchMonthCounts }: Props) {
   const [open, setOpen] = useState(false);
   const today = strToDate(todayStr);
   const [year, setYear] = useState(today.getFullYear());
@@ -22,13 +24,13 @@ export function CalendarButton({ todayStr, onPick, fetchMonthCounts }: Props) {
   useEffect(() => {
     if (!open) return;
     let alive = true;
-    void fetchMonthCounts(year, month0).then((c) => {
+    void fetchMonthCounts(year, month0, tab).then((c) => {
       if (alive) setCounts(c);
     });
     return () => {
       alive = false;
     };
-  }, [open, year, month0, fetchMonthCounts]);
+  }, [open, year, month0, tab, fetchMonthCounts]);
 
   // 바깥 클릭 시 닫기
   useEffect(() => {

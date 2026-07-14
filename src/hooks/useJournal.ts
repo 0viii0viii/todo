@@ -191,7 +191,7 @@ export function useJournal(userId: string | undefined) {
 
   // 캘린더용: 해당 월의 날짜별 개수 (완료 수 + 이번 달 오늘 칸엔 미완료 수).
   const fetchMonthCounts = useCallback(
-    async (year: number, month0: number): Promise<Record<string, number>> => {
+    async (year: number, month0: number, category: Category): Promise<Record<string, number>> => {
       if (!userId) return {};
       const startStr = dateToStr(new Date(year, month0, 1));
       const endStr = dateToStr(new Date(year, month0 + 1, 1));
@@ -199,6 +199,7 @@ export function useJournal(userId: string | undefined) {
         .from('todos')
         .select('completed_at')
         .eq('done', true)
+        .eq('category', category)
         .gte('completed_at', dayStartISO(startStr))
         .lt('completed_at', dayStartISO(endStr));
       if (error) {
@@ -211,11 +212,12 @@ export function useJournal(userId: string | undefined) {
         counts[d] = (counts[d] ?? 0) + 1;
       }
       if (startStr <= todayStr && todayStr < endStr) {
-        counts[todayStr] = (counts[todayStr] ?? 0) + incomplete.length;
+        const todayIncomplete = incomplete.filter((t) => t.category === category).length;
+        counts[todayStr] = (counts[todayStr] ?? 0) + todayIncomplete;
       }
       return counts;
     },
-    [userId, todayStr, incomplete.length],
+    [userId, todayStr, incomplete],
   );
 
   return {

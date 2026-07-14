@@ -178,7 +178,7 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
       </div>
 
       <div className="corner-actions">
-        <CalendarButton todayStr={todayStr} onPick={handlePick} fetchMonthCounts={fetchMonthCounts} />
+        <CalendarButton todayStr={todayStr} tab={tab} onPick={handlePick} fetchMonthCounts={fetchMonthCounts} />
         <ThemeButton theme={theme} setTheme={setTheme} />
         <button type="button" className="link" onClick={onLogout}>
           로그아웃
