@@ -6,6 +6,7 @@ import { useUpdater } from '../hooks/useUpdater';
 import { useTab } from '../hooks/useTab';
 import { TABS, TAB_LABEL } from '../lib/category';
 import { DaySection } from './DaySection';
+import { NotesView } from './NotesView';
 import { CalendarButton } from './CalendarButton';
 import { ThemeButton } from './ThemeButton';
 import { LoadingScreen } from './LoadingScreen';
@@ -107,9 +108,13 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
     }
   }, [days]);
 
-  // 탭 전환 시: 항상 '오늘' 섹션을 화면 맨 위로 정렬
+  // 탭 전환 시: 할 일 탭은 '오늘' 섹션을 맨 위로, 노트 탭은 맨 위로
   useEffect(() => {
     if (loading) return;
+    if (tab === 'notes') {
+      window.scrollTo(0, 0);
+      return;
+    }
     const el = dayRefs.current.get(todayStr);
     if (el) el.scrollIntoView({ block: 'start' });
   }, [tab, loading, todayStr]);
@@ -131,6 +136,7 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
   );
 
   async function handleAdd() {
+    if (tab === 'notes') return;
     const id = await add(tab);
     if (id) setFocusId(id);
   }
@@ -178,7 +184,9 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
       </div>
 
       <div className="corner-actions">
-        <CalendarButton todayStr={todayStr} tab={tab} onPick={handlePick} fetchMonthCounts={fetchMonthCounts} />
+        {tab !== 'notes' && (
+          <CalendarButton todayStr={todayStr} tab={tab} onPick={handlePick} fetchMonthCounts={fetchMonthCounts} />
+        )}
         <ThemeButton theme={theme} setTheme={setTheme} />
         <button type="button" className="link" onClick={onLogout}>
           로그아웃
@@ -187,6 +195,9 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
 
       {error && <p className="msg error">{error}</p>}
 
+      {tab === 'notes' ? (
+        <NotesView userId={user.id} />
+      ) : (
       <div className="journal">
         <div ref={sentinelRef} className="sentinel" />
         {visibleDays.map((section) => (
@@ -208,6 +219,7 @@ export function TodoApp({ user, onLogout, theme, setTheme }: Props) {
             />
         ))}
       </div>
+      )}
     </div>
   );
 }

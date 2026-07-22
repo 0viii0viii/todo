@@ -18,3 +18,14 @@ export interface Todo {
 export interface TodoView extends Todo {
   carried_over: boolean;
 }
+
+/** DB `notes` 행 한 개 — 영구 기록(포스트잇). content 는 투두와 동일한 tiptap html. */
+export interface Note {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}

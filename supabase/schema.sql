@@ -35,3 +35,28 @@ create policy "delete own" on public.todos
 
 -- 조회 성능 --------------------------------------------------------------
 create index if not exists todos_user_idx on public.todos (user_id, done, target_date);
+
+-- 노트 (영구 기록 — 포스트잇) ----------------------------------------------
+create table if not exists public.notes (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade default auth.uid(),
+  title      text not null default '',
+  content    text not null default '',  -- tiptap html (투두 항목과 동일 포맷)
+  tags       text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.notes enable row level security;
+
+drop policy if exists "notes select own" on public.notes;
+drop policy if exists "notes insert own" on public.notes;
+drop policy if exists "notes update own" on public.notes;
+drop policy if exists "notes delete own" on public.notes;
+
+create policy "notes select own" on public.notes for select using (auth.uid() = user_id);
+create policy "notes insert own" on public.notes for insert with check (auth.uid() = user_id);
+create policy "notes update own" on public.notes for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "notes delete own" on public.notes for delete using (auth.uid() = user_id);
+
+create index if not exists notes_user_idx on public.notes (user_id, updated_at desc);
